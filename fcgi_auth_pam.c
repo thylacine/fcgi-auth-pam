@@ -28,6 +28,7 @@
 static const char * _pam_service_name = NULL;
 static const char * _realm = NULL;
 static unsigned long _nproc = 0;
+static const char *_domain = NULL;
 
 
 /* send a 500 response, and log the fprintf-style parameters */
@@ -188,6 +189,7 @@ _handle_request(FCGX_Request *req)
 	size_t authorization_len;
 	char *auth_buf;
 	size_t auth_buf_len;
+	char *domain;
 	int r;
 	int auth_result;
 
@@ -243,6 +245,18 @@ _handle_request(FCGX_Request *req)
 	}
 	*(conv_data.password) = '\0';
 	conv_data.password += 1;
+
+	if (_domain
+	&&  (domain = strchr(conv_data.username, '@')) != NULL) {
+		*domain = '\0';
+		domain += 1;
+		if (*_domain != '*'
+		&&  strncmp(domain, _domain, auth_buf_len - (domain - conv_data.username)) != 0) {
+			_req_auth401(req);
+			ZERO_FREE(auth_buf, auth_buf_len);
+			return;
+		}
+	}
 
 	pam_conv.conv = &_conv;
 	pam_conv.appdata_ptr = &conv_data;
@@ -400,13 +414,14 @@ _usage(const char *prog, unsigned flags)
 {
 	FILE *f = (flags & USAGE_FLAG_FULL) ? stdout : stderr;
 
-	fprintf(f, "Usage: %s [-s service_name] [-r realm] [-n num_threads]\n", prog);
+	fprintf(f, "Usage: %s [-s service_name] [-r realm] [-n num_threads] [-d domain]\n", prog);
 
 	if (flags & USAGE_FLAG_FULL) {
 		fprintf(f, "\nOptions:\n"
 		           "\t-s service_name -- set the PAM service name to use, default: '%s'\n"
 		           "\t-r realm        -- set the default authentication realm, default: '%s'\n"
 		           "\t-n num_threads  -- number of processing threads, default: %lu (detected number of cpus)\n"
+			   "\t-d domain       -- username@domain will check PAM for username if domain matches\n"
 		           "\n",
 		           _pam_service_name,
 		           _realm,
@@ -456,7 +471,8 @@ _fqdn(void)
 }
 
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	unsigned long thd_n;
 	char *prog;
@@ -464,6 +480,7 @@ int main(int argc, char *argv[])
 	pthread_t *thd;
 	char *realm = NULL;
 	char *service = NULL;
+	char *domain = NULL;
 	long n = 0;
 	int c;
 
@@ -478,7 +495,7 @@ int main(int argc, char *argv[])
 	prog = (prog && *(prog + 1)) ? (prog + 1) : argv[0];
 	_pam_service_name = prog;
 
-	while ((c = getopt(argc, argv, "hs:r:n:")) != -1) {
+	while ((c = getopt(argc, argv, "hs:r:n:d")) != -1) {
 		switch (c) {
 			case 'h':
 				_usage(prog, USAGE_FLAG_FULL);
@@ -514,6 +531,10 @@ int main(int argc, char *argv[])
 				}
 			break;
 
+			case 'd':
+				domain = optarg;
+			break;
+
 			default: /* '?' */
 				_usage(prog, 0);
 				exit(EX_USAGE);
@@ -538,6 +559,10 @@ int main(int argc, char *argv[])
 		_nproc = n;
 	}
 	thd_n = _nproc - 1;
+
+	if (domain != NULL) {
+		_domain = domain;
+	}
 
 	fprintf(stderr, "starting %s realm: '%s' service: '%s' threads: '%lu'\r\n",
 	        prog,
