@@ -443,6 +443,9 @@ _fqdn(void)
 	for (p = info; p != NULL; p = p->ai_next) {
 		if (p->ai_canonname && *(p->ai_canonname)) {
 			strncpy(hostname, p->ai_canonname, sizeof hostname);
+			if (hostname[sizeof hostname - 1] != '\0') {
+				hostname[sizeof hostname -1] = '\0';
+			}
 			break;
 		}
 	}
