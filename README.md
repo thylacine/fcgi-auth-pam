@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/thylacine/fcgi-auth-pam.svg?branch=master)](https://travis-ci.org/thylacine/fcgi-auth-pam)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/5756/badge.svg)](https://scan.coverity.com/projects/thylacine-fcgi-auth-pam)
+
 # fcgi auth pam
 
 ## why

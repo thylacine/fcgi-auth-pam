@@ -1,0 +1,25 @@
+env:
+  global:
+    - secure: "T62942Ill0/O+6j2QVoEAmwa5284mNcSJjBRgUiiD0Hw1yUg9SDG6oSi8uhO5q7Yw86h704t8vL3d9ZnUE2iCd0O7VhMjqW/8kNqP/RlpvO1g41O+qMeCsTDY2K7wKfjpYR2kQBJkG2NwW5QX/sbE0bYvZQnv8g4X6GdwSeXTMPHj+DbcDH0QpUjKPQsrBoFzAw/NTidlfkzRRpW0nktjrGyPij1kC7371/82lsPKK5reShqg4Bu6Abgvl9iTN3dnqkJ9pXMpL1wJ/dbhQRlWW1OyhmfYPEidSnzLEcKzCwchzirijFjMeiP1VoUsTY85gUSqMgARN3b2HV7eeXAi5JWzUkTDRxXbxFYzPBlPIB0N7cd0sG9k/e0cKzRc421cs1fc5bIfvyLWqtbfJi00/tqE0xfSOhLJMTF4NpyKZFK1uc6qyMRb9ce7kjUFID39Zh348OsNL6Mo9F0yKqwZxKS/6+8CrBhKj4GTGYmTROCj9E1MGaLgfVjm6XVhW9SkaulDddeIB1+SVk5JnuayloYW1KqNmnMC090tnBhnhAk9oiJT3dfmqSumKsZTW2Ph6RatMjj/KN+smJtYqWyBK7pDEVuY8QJIZoaqnqa3hTvLKTbOyk5sownNu9pkItDxM/07poM8mXXq/tCaNZ6zPtqz5kFn3WH6tE84gg8wKc="
+
+language: c
+script: make
+
+compiler:
+  - clang
+  - gcc
+
+before_install:
+  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -qq update; else brew update; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install -y libfcgi-dev; else brew install fcgi; fi
+
+addons:
+  coverity_scan:
+    project:
+      name: "thylacine/fcgi-auth-pam"
+      description: "fastcgi PAM authenticator"
+    notification_email: jwind-github@squeep.com
+    build_command_prepend: "true"
+    build_command: "make"
+    branch_pattern: master
