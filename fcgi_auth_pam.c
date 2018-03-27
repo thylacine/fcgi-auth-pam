@@ -493,7 +493,7 @@ main(int argc, char *argv[])
 	prog = (prog && *(prog + 1)) ? (prog + 1) : argv[0];
 	_pam_service_name = prog;
 
-	while ((c = getopt(argc, argv, "hs:r:n:d")) != -1) {
+	while ((c = getopt(argc, argv, "hs:r:n:d:")) != -1) {
 		switch (c) {
 			case 'h':
 				_usage(prog, USAGE_FLAG_FULL);
